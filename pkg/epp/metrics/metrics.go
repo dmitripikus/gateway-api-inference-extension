@@ -254,6 +254,15 @@ var (
 		},
 		[]string{"commit", "build_ref"},
 	)
+
+	unweightedScore = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Subsystem: InferencePoolComponent,
+			Name:      "unweighted_score",
+			Help:      metricsutil.HelpMsgWithStability("Unweighted score calculated by scorer.", compbasemetrics.ALPHA),
+		},
+		[]string{"scorer", "pod"},
+	)
 )
 
 var registerMetrics sync.Once
@@ -280,6 +289,7 @@ func Register(customCollectors ...prometheus.Collector) {
 		metrics.Registry.MustRegister(PrefixCacheSize)
 		metrics.Registry.MustRegister(PrefixCacheHitRatio)
 		metrics.Registry.MustRegister(PrefixCacheHitLength)
+		metrics.Registry.MustRegister(unweightedScore)
 		for _, collector := range customCollectors {
 			metrics.Registry.MustRegister(collector)
 		}
@@ -307,6 +317,7 @@ func Reset() {
 	PrefixCacheSize.Reset()
 	PrefixCacheHitRatio.Reset()
 	PrefixCacheHitLength.Reset()
+	unweightedScore.Reset()
 }
 
 // RecordRequstCounter records the number of requests.
@@ -439,4 +450,8 @@ func RecordPrefixCacheMatch(matchedLength, totalLength int) {
 
 func RecordInferenceExtensionInfo() {
 	InferenceExtensionInfo.WithLabelValues(CommitSHA, BuildRef).Set(1)
+}
+
+func RecordUnweightedScore(scorerType string, podIP string, score float64) {
+	unweightedScore.WithLabelValues(scorerType, podIP).Set(score)
 }

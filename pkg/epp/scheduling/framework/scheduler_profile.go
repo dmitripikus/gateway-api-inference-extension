@@ -156,6 +156,8 @@ func (p *SchedulerProfile) runScorerPlugins(ctx context.Context, request *types.
 		scores := scorer.Score(ctx, cycleState, request, pods)
 		metrics.RecordSchedulerPluginProcessingLatency(ScorerPluginType, scorer.TypedName().Type, time.Since(before))
 		for pod, score := range scores { // weight is relative to the sum of weights
+			metrics.RecordUnweightedScore(scorer.TypedName().Type, pod.GetPod().Address, score)
+			loggerDebug.Info("Unweighted score", "scorer", scorer.TypedName().Type, "pod", pod.GetPod().Address, "score", score)
 			weightedScorePerPod[pod] += score * float64(scorer.Weight())
 		}
 		loggerDebug.Info("After running scorer", "scorer", scorer.TypedName().Type)
